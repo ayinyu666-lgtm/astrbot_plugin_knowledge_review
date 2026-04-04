@@ -51,7 +51,7 @@ docker compose up -d --force-recreate
 
 ```bash
 cd <AstrBot数据目录>/plugins/
-git clone https://github.com/YuLong-cmd/astrbot_plugin_knowledge_review.git
+git clone https://github.com/ayinyu666-lgtm/astrbot_plugin_knowledge_review.git
 ```
 
 安装后重启 AstrBot 或在管理面板点击「重载插件」。
