@@ -1,0 +1,45 @@
+{
+  "webui_port": {
+    "description": "审核 WebUI 端口",
+    "type": "int",
+    "hint": "默认 8095，修改后需重启插件",
+    "default": 8095
+  },
+  "webui_host": {
+    "description": "WebUI 绑定地址",
+    "type": "string",
+    "hint": "0.0.0.0 表示允许外部访问，127.0.0.1 仅本机",
+    "default": "0.0.0.0"
+  },
+  "astr_base_url": {
+    "description": "AstrBot HTTP API 地址",
+    "type": "string",
+    "hint": "例如 http://localhost:6185",
+    "default": "http://localhost:6185"
+  },
+  "astr_token": {
+    "description": "AstrBot API Token（如已启用鉴权）",
+    "type": "string",
+    "hint": "在 AstrBot 设置中查找",
+    "default": ""
+  },
+  "auto_classify": {
+    "description": "候选进入后是否自动调用 AI 分类",
+    "type": "bool",
+    "hint": "开启后每条新候选会自动分类，消耗少量 tokens",
+    "default": true
+  },
+  "gate_provider_id": {
+    "description": "AI 分类使用的 provider ID，留空使用默认",
+    "type": "string",
+    "hint": "填写更快/更便宜的模型 provider ID，例如 google_gemini/gemini-2.0-flash-lite",
+    "default": ""
+  },
+  "fallback_provider_ids": {
+    "description": "回退 provider ID 列表，gate_provider_id 不可用时逐个尝试",
+    "type": "list",
+    "items": {"type": "string"},
+    "hint": "按优先级排列，例如 [\"deepseek/deepseek-chat\", \"google_gemini/gemini-2.0-flash\"]",
+    "default": []
+  }
+}

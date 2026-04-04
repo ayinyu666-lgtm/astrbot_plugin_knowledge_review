@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识审核中心</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #242838;
+    --border: #2e3347; --text: #e2e8f0; --text2: #8891aa;
+    --primary: #5b8af0; --green: #48bb78; --red: #fc4e4e;
+    --yellow: #f6ad55; --purple: #a78bfa;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: "PingFang SC","Microsoft YaHei",sans-serif; min-height: 100vh; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .sub { color: var(--text2); font-size: 13px; }
+
+  nav { display: flex; gap: 2px; padding: 12px 24px 0; border-bottom: 1px solid var(--border); }
+  nav button { background: none; border: none; color: var(--text2); padding: 8px 16px; cursor: pointer; border-bottom: 2px solid transparent; font-size: 14px; transition: all .15s; }
+  nav button.active { color: var(--primary); border-color: var(--primary); }
+  nav button:hover:not(.active) { color: var(--text); }
+
+  .tab-content { display: none; padding: 20px 24px; }
+  .tab-content.active { display: block; }
+
+  /* Filters */
+  .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  select, input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn.primary { background: var(--primary); color: white; }
+  .btn.green { background: var(--green); color: white; }
+  .btn.red { background: var(--red); color: white; }
+  .btn.outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--surface); color: var(--text2); font-weight: 500; text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; max-width: 300px; }
+  tr:hover td { background: var(--surface); }
+
+  .status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .status-new { background: #1e3a5f; color: #63b3ed; }
+  .status-classified { background: #1e3a5f; color: #9ae6b4; }
+  .status-needs_review { background: #44240c; color: var(--yellow); }
+  .status-approved { background: #1c3a27; color: var(--green); }
+  .status-rejected { background: #3a1c1c; color: var(--red); }
+  .status-published { background: #2d1c5b; color: var(--purple); }
+  .status-publish_failed { background: #3a1c1c; color: #fc8181; }
+  .status-needs_regression_fix { background: #3a261c; color: var(--yellow); }
+
+  .text-clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; cursor: pointer; color: var(--text2); }
+  .text-clip:hover { color: var(--text); }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: min(700px, 95vw); max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 16px; margin-bottom: 16px; }
+  .modal label { display: block; color: var(--text2); margin-bottom: 4px; font-size: 12px; }
+  .modal textarea, .modal input, .modal select { width: 100%; margin-bottom: 12px; }
+  textarea { resize: vertical; min-height: 80px; padding: 8px; }
+
+  .field-group { margin-bottom: 14px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+
+  .raw-text-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; margin-bottom: 12px; max-height: 200px; overflow-y: auto; }
+
+  .pagination { display: flex; gap: 6px; align-items: center; margin-top: 14px; font-size: 13px; color: var(--text2); }
+  .pagination button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+
+  /* Ingest form */
+  .ingest-form { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; max-width: 700px; }
+  .ingest-form textarea { height: 120px; }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border); padding: 12px 18px; border-radius: 8px; font-size: 13px; z-index: 9999; transition: opacity .3s; }
+  .toast.fade-out { opacity: 0; }
+
+  .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; min-width: 100px; text-align: center; }
+  .stat-card .num { font-size: 24px; font-weight: 700; color: var(--primary); }
+  .stat-card .label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .kb-select-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>🔬</span>
+  <h1>知识审核中心</h1>
+  <span class="sub">astrbot_plugin_knowledge_review</span>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('candidates', this)">候选队列</button>
+  <button onclick="switchTab('publish', this)">发布记录</button>
+  <button onclick="switchTab('ingest', this)">手动导入</button>
+</nav>
+
+<!-- ===== TAB: 候选队列 ===== -->
+<div id="tab-candidates" class="tab-content active">
+  <div class="stats-row" id="stats-row">
+    <!-- filled by JS -->
+  </div>
+
+  <div class="filters">
+    <select id="status-filter" onchange="loadCandidates(1)">
+      <option value="">全部状态</option>
+      <option value="new">new - 新增</option>
+      <option value="classified">classified - 已分类</option>
+      <option value="needs_review">needs_review - 待审</option>
+      <option value="approved">approved - 已批准</option>
+      <option value="rejected">rejected - 已拒绝</option>
+      <option value="published">published - 已发布</option>
+      <option value="publish_failed">publish_failed - 发布失败</option>
+    </select>
+    <button class="btn outline" onclick="loadCandidates(1)">刷新</button>
+    <button class="btn green" onclick="batchPublishApproved()">批量发布已批准</button>
+  </div>
+
+  <table id="candidates-table">
+    <thead>
+      <tr>
+        <th style="width:32px"><input type="checkbox" id="check-all" onchange="toggleAll(this)"></th>
+        <th>原始文本</th>
+        <th>来源</th>
+        <th>类型</th>
+        <th>状态</th>
+        <th>时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="candidates-tbody">
+      <tr><td colspan="7" style="color:var(--text2);text-align:center;padding:30px">加载中...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- ===== TAB: 发布记录 ===== -->
+<div id="tab-publish" class="tab-content">
+  <div class="filters">
+    <button class="btn outline" onclick="loadPublishLog(1)">刷新</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>候选ID</th>
+        <th>目标KB</th>
+        <th>任务ID</th>
+        <th>结果</th>
+        <th>错误</th>
+        <th>时间</th>
+      </tr>
+    </thead>
+    <tbody id="publish-tbody">
+      <tr><td colspan="6" style="color:var(--text2);text-align:center;padding:30px">加载中...</td></tr>
+    </tbody>
+  </table>
+  <div class="pagination" id="publish-pagination"></div>
+</div>
+
+<!-- ===== TAB: 手动导入 ===== -->
+<div id="tab-ingest" class="tab-content">
+  <div class="ingest-form">
+    <h2 style="margin-bottom:16px">手动提交候选知识</h2>
+    <div class="field-group">
+      <label>原始文本 *</label>
+      <textarea id="ingest-text" placeholder="输入候选知识原文..."></textarea>
+    </div>
+    <div class="field-group">
+      <label>来源标识</label>
+      <input id="ingest-source" type="text" value="manual" placeholder="来源标识，如 manual / memorix">
+    </div>
+    <div class="field-group">
+      <label>用户</label>
+      <input id="ingest-user" type="text" placeholder="提交者">
+    </div>
+    <button class="btn primary" onclick="submitIngest()">提交候选</button>
+  </div>
+</div>
+
+<!-- ===== 详情 Modal ===== -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <h2>候选知识详情</h2>
+    <div id="modal-body"></div>
+    <div class="actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+let _page = 1;
+let _pubPage = 1;
+let _kbs = [];
+
+async function api(path, opts={}) {
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+// ─── Tab ───
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'candidates') loadCandidates(1);
+  if (name === 'publish') loadPublishLog(1);
+}
+
+// ─── Stats ───
+async function loadStats() {
+  const statuses = ['new','classified','needs_review','approved','rejected','published','publish_failed'];
+  const labels = {'new':'新增','classified':'已分类','needs_review':'待审','approved':'已批准','rejected':'已拒绝','published':'已发布','publish_failed':'发布失败'};
+  let html = '';
+  for (const st of statuses) {
+    const d = await api(`/api/candidates?status=${st}&page=1&page_size=1`);
+    const n = d.data?.total ?? 0;
+    if (n > 0) html += `<div class="stat-card"><div class="num">${n}</div><div class="label">${labels[st]}</div></div>`;
+  }
+  document.getElementById('stats-row').innerHTML = html || '<span style="color:var(--text2);font-size:13px">暂无数据</span>';
+}
+
+// ─── Candidates ───
+async function loadCandidates(page = 1) {
+  _page = page;
+  const st = document.getElementById('status-filter').value;
+  const d = await api(`/api/candidates?page=${page}&page_size=20${st ? '&status=' + st : ''}`);
+  const tbody = document.getElementById('candidates-tbody');
+  const items = d.data?.items || [];
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text2);text-align:center;padding:30px">暂无数据</td></tr>';
+  } else {
+    tbody.innerHTML = items.map(r => `
+      <tr>
+        <td><input type="checkbox" class="row-check" value="${r.id}"></td>
+        <td><span class="text-clip" onclick="openDetail('${r.id}')" title="${escHtml(r.raw_text)}">${escHtml(r.raw_text.slice(0,80))}${r.raw_text.length > 80 ? '…' : ''}</span></td>
+        <td style="color:var(--text2)">${r.source_plugin || ''}</td>
+        <td style="color:var(--text2)">${r.business_type || '—'}</td>
+        <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+        <td style="color:var(--text2);font-size:11px">${r.created_at ? r.created_at.slice(0,16) : ''}</td>
+        <td>
+          <button class="btn outline" onclick="openDetail('${r.id}')" style="padding:3px 8px;font-size:11px">详情</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  const total = d.data?.total || 0;
+  renderPagination('pagination', total, page, 20, loadCandidates);
+  loadStats();
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderPagination(id, total, page, pageSize, fn) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const el = document.getElementById(id);
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <button onclick="${fn.name}(${page - 1})" ${page <= 1 ? 'disabled' : ''}>上一页</button>
+    <span>${page} / ${totalPages} (共 ${total} 条)</span>
+    <button onclick="${fn.name}(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>下一页</button>
+  `;
+}
+
+function toggleAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+}
+
+function getCheckedIds() {
+  return Array.from(document.querySelectorAll('.row-check:checked')).map(c => c.value);
+}
+
+// ─── Detail Modal ───
+let _currentId = null;
+async function openDetail(id) {
+  _currentId = id;
+  const d = await api('/api/candidates/' + id);
+  const r = d.data;
+  if (!r) return;
+
+  // Load KBs
+  if (!_kbs.length) {
+    const kbResp = await api('/api/kbs');
+    _kbs = kbResp.data || [];
+  }
+
+  const kbOptions = _kbs.map(kb => `<option value="${kb.kb_id}">${kb.kb_name} (${kb.kb_id.slice(0,8)})</option>`).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field-group"><label>ID</label><code style="color:var(--text2)">${r.id}</code></div>
+    <div class="field-group"><label>状态</label><span class="status-badge status-${r.status}">${r.status}</span></div>
+    <div class="field-group"><label>来源</label>${r.source_plugin || '—'} | 用户: ${r.source_user || '—'}</div>
+    <div class="field-group"><label>AI分类</label>${r.business_type || '—'} ${r.confidence ? '(置信度: ' + (r.confidence*100).toFixed(0) + '%)' : ''}</div>
+    <div class="field-group">
+      <label>原始文本</label>
+      <div class="raw-text-box">${escHtml(r.raw_text)}</div>
+    </div>
+    <div class="field-group">
+      <label>RAG 发布文本（可编辑）</label>
+      <textarea id="rag-text-input" style="height:120px;background:var(--surface2);border:1px solid var(--border);color:var(--text)">${escHtml(r.rag_text || r.raw_text)}</textarea>
+    </div>
+    <div class="kb-select-row">
+      <label style="white-space:nowrap;color:var(--text2)">目标知识库：</label>
+      <select id="kb-select" style="flex:1">${kbOptions || '<option value="">（无可用知识库）</option>'}</select>
+      <span style="color:var(--text2);font-size:11px">${_kbs.length}个可用</span>
+    </div>
+    <div class="field-group">
+      <label>审核备注</label>
+      <input id="review-notes" type="text" placeholder="（可选备注）" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)">
+    </div>
+  `;
+
+  const canAct = ['new','classified','needs_review'].includes(r.status);
+  const canPublish = r.status === 'approved';
+  document.getElementById('modal-actions').innerHTML = `
+    ${canAct ? `<button class="btn green" onclick="doApprove('${id}')">✓ 批准</button>` : ''}
+    ${canAct ? `<button class="btn primary" onclick="doModifyApprove('${id}')">✎ 修改并批准</button>` : ''}
+    ${canAct ? `<button class="btn red" onclick="doReject('${id}')">✗ 拒绝</button>` : ''}
+    ${r.status === 'new' ? `<button class="btn outline" onclick="doClassify('${id}')">🤖 AI分类</button>` : ''}
+    ${canPublish ? `<button class="btn primary" onclick="doPublish('${id}')">⬆ 发布 RAG</button>` : ''}
+    <button class="btn outline" onclick="closeModal()">关闭</button>
+  `;
+
+  document.getElementById('modal-detail').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-detail').classList.remove('show');
+  _currentId = null;
+}
+
+async function doApprove(id) {
+  const kb = document.getElementById('kb-select')?.value;
+  const notes = document.getElementById('review-notes')?.value;
+  const d = await api(`/api/candidates/${id}/approve`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({reviewer:'webui', notes, kb_id: kb || null}),
+  });
+  toast(d.ok ? '已批准' : d.data?.error || '操作失败', d.ok);
+  closeModal(); loadCandidates(_page);
+}
+
+async function doReject(id) {
+  const notes = document.getElementById('review-notes')?.value;
+  const d = await api(`/api/candidates/${id}/reject`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({reason: notes || '人工拒绝'}),
+  });
+  toast(d.ok ? '已拒绝' : d.data?.error || '操作失败', d.ok);
+  closeModal(); loadCandidates(_page);
+}
+
+async function doModifyApprove(id) {
+  const rag = document.getElementById('rag-text-input')?.value?.trim();
+  const kb = document.getElementById('kb-select')?.value;
+  const notes = document.getElementById('review-notes')?.value;
+  if (!rag) return toast('RAG 文本不能为空', false);
+  const d = await api(`/api/candidates/${id}/modify`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({rag_text: rag, reviewer:'webui', notes, kb_id: kb || null}),
+  });
+  toast(d.ok ? '已修改并批准' : d.data?.error || '操作失败', d.ok);
+  closeModal(); loadCandidates(_page);
+}
+
+async function doPublish(id) {
+  const kb = document.getElementById('kb-select')?.value;
+  if (!kb) return toast('请先选择目标知识库', false);
+  const d = await api(`/api/candidates/${id}/publish`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({kb_id: kb}),
+  });
+  toast(d.ok ? '发布成功（后台处理中）' : d.data?.error || '发布失败', d.ok);
+  closeModal(); loadCandidates(_page);
+}
+
+async function doClassify(id) {
+  const d = await api(`/api/candidates/${id}/classify`, {method:'POST'});
+  toast(d.ok ? `已分类为 ${d.data?.business_type || '?'}` : d.data?.error || '分类失败', d.ok);
+  closeModal(); openDetail(id);
+}
+
+async function batchPublishApproved() {
+  const ids = getCheckedIds();
+  if (!ids.length) return toast('请先勾选要发布的候选', false);
+  const kb = prompt('输入目标知识库 ID：');
+  if (!kb) return;
+  const d = await api('/api/candidates/publish-batch', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ids, kb_id: kb}),
+  });
+  const okCount = (d.data||[]).filter(r => r.ok).length;
+  toast(`批量发布: ${okCount}/${ids.length} 成功`, okCount === ids.length);
+  loadCandidates(_page);
+}
+
+// ─── Publish Log ───
+async function loadPublishLog(page = 1) {
+  _pubPage = page;
+  const d = await api(`/api/publish-log?page=${page}&page_size=20`);
+  const logs = d.data || [];
+  const tbody = document.getElementById('publish-tbody');
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:30px">暂无记录</td></tr>';
+  } else {
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td style="font-size:11px;color:var(--text2)">${l.candidate_id?.slice(0,8) || ''}</td>
+        <td>${l.kb_name || l.kb_id?.slice(0,12) || '—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${l.task_id?.slice(0,12) || '—'}</td>
+        <td><span class="status-badge ${l.success ? 'status-published' : 'status-publish_failed'}">${l.success ? '成功' : '失败'}</span></td>
+        <td style="color:var(--red);font-size:12px">${escHtml(l.error || '')}</td>
+        <td style="color:var(--text2);font-size:11px">${l.created_at ? l.created_at.slice(0,16) : ''}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+// ─── Ingest ───
+async function submitIngest() {
+  const text = document.getElementById('ingest-text').value.trim();
+  if (!text) return toast('文本不能为空', false);
+  const source = document.getElementById('ingest-source').value.trim() || 'manual';
+  const user = document.getElementById('ingest-user').value.trim();
+  const d = await api('/api/candidates/ingest', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text, source, user: user || undefined}),
+  });
+  if (d.ok) {
+    toast('已提交候选');
+    document.getElementById('ingest-text').value = '';
+  } else {
+    toast(d.error || '提交失败', false);
+  }
+}
+
+// ─── Toast ───
+function toast(msg, ok = true) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+  el.textContent = (ok ? '✓ ' : '✗ ') + msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.classList.add('fade-out'); setTimeout(() => el.remove(), 350); }, 2500);
+}
+
+// ─── Close modal on overlay click ───
+document.getElementById('modal-detail').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── Init ───
+loadCandidates(1);
+</script>
+</body>
+</html>
