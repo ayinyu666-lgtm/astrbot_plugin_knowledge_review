@@ -1,8 +1,8 @@
 name: astrbot_plugin_knowledge_review
-display_name: 知识候选审核中心
-desc: 候选知识治理与发布插件——收集来自 Memorix 等插件的候选知识，AI 自动分类，人工审核后自动发布到 AstrBot 知识库（RAG）。内置 WebUI 审核面板。
-help: 安装后通过 WebUI 审核面板管理候选知识。使用 /kr_status 查看状态。外部插件通过 REST API 提交候选。
-version: v0.2.0
+display_name: "知识候选审核中心 / Knowledge Review Center"
+desc: "候选知识治理与发布插件——收集-AI分类-人工审核-发布到RAG全流程，内置WebUI / Knowledge governance: collect-classify-review-publish to RAG, built-in WebUI"
+help: "安装后通过WebUI审核候选知识。/kr_status 查看状态，/kr_providers 查看可用模型。 / Use WebUI for review. /kr_status for status, /kr_providers for models."
+version: 0.3.0
 author: yulong
 repo: https://github.com/ayinyu666-lgtm/astrbot_plugin_knowledge_review
 astrbot_version: ">=4.16"

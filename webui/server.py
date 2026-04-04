@@ -48,7 +48,7 @@ class KRWebUIServer:
 
         # 初始化服务
         self.ingest_service = CandidateIngestService(store)
-        self.classifier_service = ClassifierService(config)
+        self.classifier_service = ClassifierService(config, context)
         self.review_service = ReviewService(store)
 
         # AstrBot KB 客户端
