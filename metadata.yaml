@@ -2,7 +2,7 @@ name: astrbot_plugin_knowledge_review
 display_name: "知识候选审核中心 / Knowledge Review Center"
 desc: "候选知识治理与发布插件——收集-AI分类-人工审核-发布到RAG全流程，内置WebUI，支持算法自动提取QA对 / Knowledge governance: collect-classify-review-publish to RAG, built-in WebUI, auto QA pair extraction"
 help: "安装后通过WebUI审核候选知识。/kr_status 查看状态，/kr_providers 查看可用模型。自动提取可在配置中开关。 / Use WebUI for review. /kr_status for status, /kr_providers for models. Auto-extraction togglable in config."
-version: 0.4.0
+version: 0.5.0
 author: yulong
 repo: https://github.com/ayinyu666-lgtm/astrbot_plugin_knowledge_review
 astrbot_version: ">=4.16"
