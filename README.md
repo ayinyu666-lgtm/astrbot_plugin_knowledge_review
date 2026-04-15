@@ -227,3 +227,11 @@ A: 向 `http://<host>:8095/api/candidates/ingest` 发送 POST 请求即可，格
 ## License
 
 MIT
+
+## ⚙️ 核心前置与环境要求 (Prerequisites)
+1. **AstrBot 核心版本**：>= 4.16
+2. **联动依赖**：必须预先安装官方的 `astrbot_plugin_knowledge_base` 插件。本审核中心负责通过 AstrBot 的 KB API (`/api/kb/document/import`) 拦截并发布高质量知识。
+3. **网络与部署要求**：
+   - 插件内置了一个独立的 WebUI (默认端口 `8095`)。
+   - 如果您使用 Docker 部署 AstrBot，**必须在 `docker-compose.yml` 中映射端口 `8095:8095`**。
+4. **无需修改核心代码**：纯插件架构下载即用，安装后可通过插件面板动态开启或关闭 AI 自动 QA 提取等功能。
